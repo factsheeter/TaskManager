@@ -1,0 +1,1454 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"/>
+<meta name="apple-mobile-web-app-title" content="TaskMate"/>
+<meta name="theme-color" content="#6366f1"/>
+<title>TaskMate v2</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display',sans-serif}
+:root{
+  --indigo:#6366f1;--indigo-dark:#4f46e5;--purple:#8b5cf6;
+  --green:#22c55e;--amber:#f59e0b;--red:#ef4444;--blue:#3b82f6;
+  --slate:#64748b;--bg:#f8fafc;--card:#fff;--border:#e2e8f0;
+  --text:#0f172a;--text2:#64748b;--text3:#94a3b8;
+  --loan:#e11d48;--loan-light:#fff1f2;
+}
+body{background:var(--bg);display:flex;justify-content:center;min-height:100vh}
+#app{width:100%;max-width:430px;background:var(--bg);min-height:100vh;display:flex;flex-direction:column;position:relative}
+
+/* HEADER — no stats row, just greeting + add button */
+.header{background:linear-gradient(135deg,var(–indigo-dark) 0%,var(–purple) 100%);padding:calc(env(safe-area-inset-top)+16px) 20px 24px;position:relative;overflow:hidden}
+.header::before{content:’’;position:absolute;top:-40px;right:-40px;width:160px;height:160px;background:rgba(255,255,255,0.06);border-radius:50%}
+.header::after{content:’’;position:absolute;bottom:-60px;left:-20px;width:200px;height:200px;background:rgba(255,255,255,0.04);border-radius:50%}
+.header-row{display:flex;justify-content:space-between;align-items:flex-start;position:relative;z-index:1}
+.header h1{color:#fff;font-size:26px;font-weight:800;letter-spacing:-0.5px}
+.header .sub{color:rgba(255,255,255,0.65);font-size:13px;margin-bottom:3px}
+.header-actions{display:flex;gap:10px}
+.icon-btn{width:40px;height:40px;background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);border-radius:12px;color:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;backdrop-filter:blur(10px)}
+.icon-btn:active{transform:scale(0.92);background:rgba(255,255,255,0.25)}
+
+/* CATEGORY TABS */
+.cat-scroll{background:#fff;border-bottom:1px solid var(–border);overflow-x:auto;scrollbar-width:none;display:flex;padding:0 12px}
+.cat-scroll::-webkit-scrollbar{display:none}
+.cat-tab{flex-shrink:0;padding:14px 16px;border:none;background:none;font-size:13px;font-weight:600;color:var(–text3);cursor:pointer;border-bottom:2px solid transparent;transition:.2s;white-space:nowrap}
+.cat-tab.active{color:var(–indigo);border-bottom-color:var(–indigo)}
+
+/* CONTENT */
+.content{flex:1;overflow-y:auto;padding-bottom:100px}
+.page{display:none}
+.page.active{display:block}
+.pad{padding:16px}
+
+/* CARDS */
+.card{background:var(–card);border-radius:20px;border:1px solid var(–border);box-shadow:0 1px 8px rgba(0,0,0,0.05);margin-bottom:12px;overflow:hidden}
+.card-header{padding:16px 16px 0;display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.card-title{font-size:13px;font-weight:700;color:var(–text2);text-transform:uppercase;letter-spacing:.05em}
+
+/* TODAY’S TASKS CARD — highlighted section */
+.today-section{background:linear-gradient(135deg,#0f172a 0%,#1e293b 100%);border-radius:20px;padding:18px;margin-bottom:14px;position:relative;overflow:hidden}
+.today-section::before{content:’’;position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(99,102,241,0.15);border-radius:50%}
+.today-section::after{content:’’;position:absolute;bottom:-40px;left:-20px;width:140px;height:140px;background:rgba(139,92,246,0.1);border-radius:50%}
+.today-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:relative;z-index:1}
+.today-title{font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:8px}
+.today-badge{background:var(–red);color:#fff;font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px}
+.today-badge.done{background:var(–green)}
+.today-task{background:rgba(255,255,255,0.08);border:1px solid rgba(255,255,255,0.12);border-radius:14px;padding:13px;margin-bottom:8px;position:relative;z-index:1;transition:.2s}
+.today-task:last-child{margin-bottom:0}
+.today-task.done-today{opacity:.5}
+.today-task-row{display:flex;align-items:flex-start;gap:10px}
+.today-chk{width:24px;height:24px;border-radius:7px;border:2px solid rgba(255,255,255,0.3);display:flex;align-items:center;justify-content:center;font-size:11px;cursor:pointer;flex-shrink:0;margin-top:1px;transition:.2s;font-weight:700}
+.today-chk.done-chk{border-color:var(–green);background:rgba(34,197,94,0.2);color:var(–green)}
+.today-chk:active{transform:scale(0.88)}
+.today-task-title{font-size:13px;font-weight:600;color:#fff;line-height:1.35;flex:1}
+.today-task-title.done-text{text-decoration:line-through;color:rgba(255,255,255,0.4)}
+.today-meta{display:flex;gap:5px;margin-top:7px;flex-wrap:wrap}
+.today-pill{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700}
+.tp-high{background:rgba(239,68,68,0.25);color:#fca5a5}
+.tp-medium{background:rgba(245,158,11,0.25);color:#fcd34d}
+.tp-low{background:rgba(34,197,94,0.25);color:#86efac}
+.tp-cat{background:rgba(139,92,246,0.25);color:#c4b5fd}
+.today-empty{text-align:center;padding:20px;position:relative;z-index:1}
+.today-empty .e-ico{font-size:32px;margin-bottom:8px}
+.today-empty .e-txt{color:rgba(255,255,255,0.6);font-size:13px;font-weight:600}
+
+/* PROGRESS RING CARD — kept small/simple for alerts only */
+.ring-row{display:flex;align-items:center;gap:20px;position:relative;z-index:1}
+.ring-wrap{position:relative;width:80px;height:80px;flex-shrink:0}
+.ring-wrap svg{transform:rotate(-90deg)}
+.ring-lbl{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:800;color:#fff}
+.ring-info .big{font-size:28px;font-weight:800;color:#fff;line-height:1}
+.ring-info .sm{font-size:12px;color:rgba(255,255,255,0.7);margin-top:4px}
+.ring-info .badge{display:inline-block;margin-top:6px;font-size:11px;background:rgba(255,100,100,0.3);color:#fca5a5;padding:3px 10px;border-radius:99px;font-weight:600}
+
+/* TASK CARD */
+.task-card{background:var(–card);border-radius:16px;border:1px solid var(–border);padding:14px;margin-bottom:8px;box-shadow:0 1px 4px rgba(0,0,0,0.04);transition:.15s;cursor:default}
+.task-card:active{transform:scale(0.99)}
+.task-card.overdue{border-color:#fecaca;background:#fff5f5}
+.task-card.done-card{opacity:.6}
+.tc-row{display:flex;align-items:flex-start;gap:11px}
+.tc-check{width:26px;height:26px;border-radius:8px;border:2px solid var(–border);display:flex;align-items:center;justify-content:center;font-size:12px;cursor:pointer;flex-shrink:0;margin-top:1px;transition:.2s;font-weight:700}
+.tc-check:active{transform:scale(0.88)}
+.chk-todo{border-color:#cbd5e1;color:transparent}
+.chk-prog{border-color:var(–blue);background:#eff6ff;color:var(–blue)}
+.chk-done{border-color:var(–green);background:#f0fdf4;color:var(–green)}
+.tc-body{flex:1;min-width:0}
+.tc-title{font-size:14px;font-weight:600;color:var(–text);line-height:1.35}
+.tc-title.done{text-decoration:line-through;color:var(–text3)}
+.tc-meta{display:flex;flex-wrap:wrap;gap:5px;margin-top:7px;align-items:center}
+.pill{font-size:11px;padding:3px 9px;border-radius:99px;font-weight:600;white-space:nowrap}
+.pill-high{background:#fef2f2;color:#dc2626}
+.pill-medium{background:#fffbeb;color:#b45309}
+.pill-low{background:#f0fdf4;color:#16a34a}
+.pill-todo{background:#f1f5f9;color:#475569}
+.pill-prog{background:#eff6ff;color:#2563eb}
+.pill-done{background:#f0fdf4;color:#16a34a}
+.pill-cat{background:#f5f3ff;color:#7c3aed}
+.date-lbl{font-size:11px;color:var(–text3)}
+.date-lbl.urgent{color:#ef4444;font-weight:700}
+.date-lbl.soon{color:#f59e0b;font-weight:600}
+.countdown{font-size:10px;padding:2px 7px;border-radius:99px;font-weight:700}
+.cd-overdue{background:#fef2f2;color:#dc2626}
+.cd-today{background:#fff7ed;color:#ea580c}
+.cd-soon{background:#fffbeb;color:#b45309}
+.cd-ok{background:#f0fdf4;color:#16a34a}
+.tc-actions{display:flex;gap:2px;flex-shrink:0}
+.tc-actions button{background:none;border:none;cursor:pointer;font-size:15px;padding:5px;opacity:.35;transition:.2s;border-radius:8px}
+.tc-actions button:hover{opacity:1;background:var(–bg)}
+
+/* FILTER BAR */
+.filter-bar{display:flex;gap:7px;overflow-x:auto;padding:12px 16px 0;scrollbar-width:none;margin-bottom:4px}
+.filter-bar::-webkit-scrollbar{display:none}
+.fb{padding:7px 14px;border-radius:99px;border:none;font-size:12px;font-weight:600;cursor:pointer;white-space:nowrap;transition:.2s}
+.fb:active{transform:scale(0.95)}
+.fb-on-s{background:var(–indigo);color:#fff}
+.fb-on-p{background:var(–purple);color:#fff}
+.fb-off{background:#f1f5f9;color:var(–text2)}
+.sort-sel{margin-left:auto;padding:7px 12px;border-radius:99px;border:1px solid var(–border);font-size:12px;background:#fff;color:var(–text2);outline:none;flex-shrink:0}
+
+/* ALERT BANNERS */
+.alert{border-radius:16px;padding:13px 14px;display:flex;align-items:flex-start;gap:11px;margin-bottom:12px;cursor:pointer;transition:.2s}
+.alert:active{transform:scale(0.99)}
+.alert-red{background:#fef2f2;border:1px solid #fecaca}
+.alert-amber{background:#fffbeb;border:1px solid #fde68a}
+.alert-blue{background:#eff6ff;border:1px solid #bfdbfe}
+.alert-green{background:#f0fdf4;border:1px solid #bbf7d0}
+.alert .ico{font-size:20px;flex-shrink:0;margin-top:1px}
+.alert .atitle{font-size:13px;font-weight:700}
+.alert .asub{font-size:11px;margin-top:2px;opacity:.8}
+.alert-red .atitle{color:#dc2626}.alert-red .asub{color:#ef4444}
+.alert-amber .atitle{color:#b45309}.alert-amber .asub{color:#d97706}
+.alert-blue .atitle{color:#1d4ed8}.alert-blue .asub{color:#3b82f6}
+.alert-green .atitle{color:#15803d}.alert-green .asub{color:#22c55e}
+
+/* SEARCH BAR */
+.search-wrap{padding:12px 16px 0}
+.search-box{display:flex;align-items:center;gap:10px;background:var(–card);border:1px solid var(–border);border-radius:14px;padding:11px 14px}
+.search-box input{flex:1;border:none;outline:none;font-size:14px;color:var(–text);background:transparent}
+.search-box input::placeholder{color:var(–text3)}
+.search-ico{color:var(–text3);font-size:16px}
+
+/* EMPTY STATE */
+.empty-state{text-align:center;padding:50px 20px}
+.empty-state .emoji{font-size:44px;margin-bottom:12px}
+.empty-state .etitle{font-size:16px;font-weight:700;color:var(–text2);margin-bottom:6px}
+.empty-state .esub{font-size:13px;color:var(–text3)}
+
+/* FAB */
+.fab{position:fixed;bottom:calc(24px + env(safe-area-inset-bottom));right:calc(50% - 215px + 20px);width:56px;height:56px;background:linear-gradient(135deg,var(–indigo),var(–purple));border:none;border-radius:18px;color:#fff;font-size:26px;cursor:pointer;box-shadow:0 6px 24px rgba(99,102,241,0.45);display:flex;align-items:center;justify-content:center;transition:.2s;z-index:50}
+.fab:active{transform:scale(0.92)}
+@media(max-width:430px){.fab{right:20px}}
+
+/* MODAL */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,0.55);display:none;align-items:flex-end;z-index:200;backdrop-filter:blur(4px)}
+.overlay.open{display:flex}
+.modal{background:var(–card);width:100%;max-width:430px;margin:0 auto;border-radius:28px 28px 0 0;padding:24px;max-height:90vh;overflow-y:auto;padding-bottom:calc(24px + env(safe-area-inset-bottom))}
+.modal-handle{width:36px;height:4px;background:var(–border);border-radius:99px;margin:0 auto 20px}
+.modal h2{font-size:20px;font-weight:800;color:var(–text);margin-bottom:4px}
+.modal .modal-sub{font-size:13px;color:var(–text2);margin-bottom:20px}
+.modal-close{position:absolute;top:24px;right:24px;background:var(–bg);border:none;width:32px;height:32px;border-radius:10px;font-size:16px;color:var(–text2);cursor:pointer;display:flex;align-items:center;justify-content:center}
+.field{margin-bottom:14px}
+.field label{display:block;font-size:11px;font-weight:700;color:var(–text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px}
+.field input,.field select,.field textarea{width:100%;border:1.5px solid var(–border);border-radius:12px;padding:12px 14px;font-size:14px;outline:none;background:var(–bg);color:var(–text);transition:.2s;-webkit-appearance:none;font-family:inherit}
+.field input:focus,.field select:focus,.field textarea:focus{border-color:var(–indigo);background:#fff}
+.field textarea{resize:none;height:72px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.type-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.type-opt{padding:10px 6px;border-radius:12px;border:2px solid var(–border);background:var(–bg);font-size:11px;font-weight:700;color:var(–text2);cursor:pointer;text-align:center;transition:.2s}
+.type-opt.selected{border-color:var(–indigo);background:#eef2ff;color:var(–indigo)}
+.save-btn{width:100%;padding:16px;background:linear-gradient(135deg,var(–indigo),var(–purple));color:#fff;font-size:15px;font-weight:800;border:none;border-radius:16px;cursor:pointer;margin-top:8px;transition:.2s;letter-spacing:.01em}
+.save-btn:active{transform:scale(0.98)}
+.modal-type-tabs{display:flex;gap:8px;margin-bottom:20px;flex-wrap:wrap}
+.mtt{flex:1;padding:10px;border-radius:12px;border:2px solid var(–border);background:var(–bg);font-size:12px;font-weight:700;color:var(–text2);cursor:pointer;text-align:center;transition:.2s;min-width:80px}
+.mtt.on{border-color:var(–indigo);background:#eef2ff;color:var(–indigo)}
+
+/* SECTION DIVIDER */
+.sec-div{font-size:12px;font-weight:700;color:var(–text2);text-transform:uppercase;letter-spacing:.06em;padding:16px 16px 8px;display:flex;align-items:center;gap:8px}
+.sec-div::after{content:’’;flex:1;height:1px;background:var(–border)}
+
+/* NO TASKS */
+.no-items{text-align:center;padding:30px 20px;color:var(–text3);font-size:13px}
+
+/* FINANCE SUMMARY */
+.fin-summary{background:linear-gradient(135deg,#065f46,#047857);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.fin-summary::before{content:’’;position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.07);border-radius:50%}
+.fin-summary h3{color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.fin-summary .total{color:#fff;font-size:32px;font-weight:800;letter-spacing:-1px}
+.fin-summary .sub{color:rgba(255,255,255,0.65);font-size:12px;margin-top:4px}
+.fin-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;position:relative;z-index:1}
+.fin-stat{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.15)}
+.fin-stat .fn{font-size:16px;font-weight:800;color:#fff}
+.fin-stat .fl{font-size:10px;color:rgba(255,255,255,0.65);font-weight:600;margin-top:2px}
+
+/* LOANS SUMMARY — red gradient to distinguish */
+.loan-summary{background:linear-gradient(135deg,#7f1d1d,#991b1b);border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.loan-summary::before{content:’’;position:absolute;top:-20px;right:-20px;width:100px;height:100px;background:rgba(255,255,255,0.07);border-radius:50%}
+.loan-summary h3{color:rgba(255,255,255,0.7);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
+.loan-summary .total{color:#fff;font-size:32px;font-weight:800;letter-spacing:-1px}
+.loan-summary .sub{color:rgba(255,255,255,0.65);font-size:12px;margin-top:4px}
+.loan-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px;position:relative;z-index:1}
+.loan-stat{background:rgba(255,255,255,0.12);border-radius:12px;padding:10px 12px;border:1px solid rgba(255,255,255,0.15)}
+.loan-stat .fn{font-size:16px;font-weight:800;color:#fff}
+.loan-stat .fl{font-size:10px;color:rgba(255,255,255,0.65);font-weight:600;margin-top:2px}
+
+/* INVESTMENT CARDS */
+.inv-card{background:var(–card);border-radius:18px;border:1px solid var(–border);padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.inv-type-badge{display:inline-block;font-size:11px;padding:3px 10px;border-radius:99px;font-weight:700;margin-bottom:10px}
+.inv-stocks{background:#fff7ed;color:#c2410c}
+.inv-mf{background:#f0fdf4;color:#15803d}
+.inv-fd{background:#eff6ff;color:#1d4ed8}
+.inv-gold{background:#fffbeb;color:#b45309}
+.inv-loan{background:var(–loan-light);color:var(–loan)}
+.inv-other{background:#f5f3ff;color:#7c3aed}
+.inv-name{font-size:16px;font-weight:700;color:var(–text);margin-bottom:12px}
+.inv-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
+.inv-field{background:var(–bg);border-radius:12px;padding:10px 12px}
+.inv-field .lbl{font-size:10px;font-weight:700;color:var(–text3);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px}
+.inv-field .val{font-size:14px;font-weight:700;color:var(–text)}
+.inv-field .val.green{color:#16a34a}
+.inv-field .val.blue{color:#2563eb}
+.inv-field .val.red{color:#dc2626}
+.inv-progress-wrap{margin-top:4px}
+.inv-progress-lbl{display:flex;justify-content:space-between;font-size:11px;color:var(–text2);margin-bottom:5px}
+.inv-actions{display:flex;gap:8px;margin-top:12px}
+.inv-actions button{flex:1;padding:9px;border:none;border-radius:10px;font-size:12px;font-weight:700;cursor:pointer;transition:.2s}
+.inv-edit-btn{background:#f5f3ff;color:#7c3aed}
+.inv-del-btn{background:#fef2f2;color:#dc2626}
+.inv-actions button:active{transform:scale(0.97)}
+
+/* PROGRESS BAR */
+.pbar-row{margin-bottom:10px}
+.pbar-row:last-child{margin-bottom:0}
+.pbar-head{display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px}
+.pbar-track{height:7px;background:#f1f5f9;border-radius:99px;overflow:hidden}
+.pbar-fill{height:100%;border-radius:99px;transition:width .6s cubic-bezier(.4,0,.2,1)}
+.fill-red{background:linear-gradient(90deg,#ef4444,#f87171)}
+.fill-amber{background:linear-gradient(90deg,#f59e0b,#fcd34d)}
+.fill-green{background:linear-gradient(90deg,#22c55e,#86efac)}
+.fill-blue{background:linear-gradient(90deg,#3b82f6,#93c5fd)}
+.fill-purple{background:linear-gradient(90deg,#8b5cf6,#c4b5fd)}
+
+/* STUCK CARDS */
+.stuck-card{background:var(–card);border-radius:16px;padding:14px;margin-bottom:10px;border:2px solid #fde68a}
+.stuck-card.urgent{border-color:#fca5a5}
+.stuck-urgent{font-size:11px;font-weight:700;color:#dc2626;margin-bottom:6px}
+.stuck-title{font-size:15px;font-weight:700;color:var(–text);margin-bottom:8px}
+.green-btn{width:100%;padding:12px;background:linear-gradient(135deg,#22c55e,#16a34a);color:#fff;font-size:13px;font-weight:700;border:none;border-radius:12px;cursor:pointer;margin-top:10px;transition:.2s}
+.green-btn:active{transform:scale(0.98)}
+
+/* STREAK */
+.streak-badge{display:inline-flex;align-items:center;gap:6px;background:linear-gradient(135deg,#f59e0b,#ef4444);color:#fff;font-size:12px;font-weight:700;padding:6px 14px;border-radius:99px}
+
+/* NET WORTH CARD */
+.networth-card{border-radius:20px;padding:20px;margin-bottom:12px;position:relative;overflow:hidden}
+.networth-card.positive{background:linear-gradient(135deg,#0c4a6e,#075985)}
+.networth-card.negative{background:linear-gradient(135deg,#450a0a,#7f1d1d)}
+.networth-card::before{content:’’;position:absolute;top:-30px;right:-30px;width:130px;height:130px;background:rgba(255,255,255,0.07);border-radius:50%}
+.networth-label{color:rgba(255,255,255,0.65);font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px;position:relative;z-index:1}
+.networth-value{font-size:36px;font-weight:900;color:#fff;letter-spacing:-1.5px;position:relative;z-index:1;line-height:1}
+.networth-sub{font-size:12px;color:rgba(255,255,255,0.6);margin-top:6px;position:relative;z-index:1}
+.networth-breakdown{display:flex;gap:10px;margin-top:14px;position:relative;z-index:1}
+.nw-item{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px 12px}
+.nw-item .nw-n{font-size:15px;font-weight:800;color:#fff}
+.nw-item .nw-l{font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;margin-top:2px}
+
+/* EMI CALENDAR */
+.emi-calendar-card{background:var(–card);border-radius:18px;border:1px solid var(–border);padding:16px;margin-bottom:10px;box-shadow:0 2px 8px rgba(0,0,0,0.05)}
+.emi-month-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
+.emi-month-title{font-size:15px;font-weight:800;color:var(–text)}
+.emi-month-total{font-size:13px;font-weight:700;color:var(–loan);background:var(–loan-light);padding:4px 12px;border-radius:99px}
+.emi-row{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(–border)}
+.emi-row:last-child{border-bottom:none}
+.emi-icon{width:38px;height:38px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.emi-icon.due-soon{background:#fef2f2}
+.emi-icon.due-ok{background:#f0fdf4}
+.emi-icon.due-today{background:#fff7ed}
+.emi-info{flex:1}
+.emi-name{font-size:13px;font-weight:700;color:var(–text)}
+.emi-due-date{font-size:11px;color:var(–text3);margin-top:2px}
+.emi-amount{font-size:14px;font-weight:800;color:var(–loan);text-align:right}
+.emi-status-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;display:block;margin-top:3px;text-align:right}
+.emi-due-soon-badge{background:#fef2f2;color:#dc2626}
+.emi-due-ok-badge{background:#f0fdf4;color:#16a34a}
+.emi-due-today-badge{background:#fff7ed;color:#ea580c}
+
+/* RECURRING TASKS */
+.recur-badge{font-size:10px;padding:2px 8px;border-radius:99px;font-weight:700;background:#eff6ff;color:#2563eb;white-space:nowrap}
+.recur-toggle{display:flex;align-items:center;gap:8px;margin-top:10px;padding:10px 14px;background:var(–bg);border-radius:12px;border:1.5px solid var(–border)}
+.recur-toggle label{font-size:12px;font-weight:600;color:var(–text2);flex:1}
+.toggle-sw{position:relative;width:40px;height:22px;flex-shrink:0}
+.toggle-sw input{opacity:0;width:0;height:0}
+.toggle-sl{position:absolute;inset:0;background:#cbd5e1;border-radius:99px;cursor:pointer;transition:.3s}
+.toggle-sl:before{content:’’;position:absolute;width:16px;height:16px;left:3px;bottom:3px;background:#fff;border-radius:50%;transition:.3s}
+.toggle-sw input:checked+.toggle-sl{background:var(–indigo)}
+.toggle-sw input:checked+.toggle-sl:before{transform:translateX(18px)}
+.recur-freq-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}
+.recur-freq-opt{padding:9px;border-radius:10px;border:2px solid var(–border);background:var(–bg);font-size:12px;font-weight:700;color:var(–text2);cursor:pointer;text-align:center;transition:.2s}
+.recur-freq-opt.selected{border-color:var(–indigo);background:#eef2ff;color:var(–indigo)}
+
+/* TODAY PAGE */
+#page-today .pad{padding-top:16px}
+.today-page-header{background:linear-gradient(135deg,#0f172a,#1e293b);border-radius:20px;padding:20px;margin-bottom:14px;text-align:center;position:relative;overflow:hidden}
+.today-page-header::before{content:’’;position:absolute;top:-30px;right:-30px;width:120px;height:120px;background:rgba(99,102,241,0.2);border-radius:50%}
+.today-page-date{font-size:12px;font-weight:700;color:rgba(255,255,255,0.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px;position:relative;z-index:1}
+.today-page-title{font-size:22px;font-weight:800;color:#fff;position:relative;z-index:1}
+.today-page-sub{font-size:13px;color:rgba(255,255,255,0.6);margin-top:4px;position:relative;z-index:1}
+.today-count-row{display:flex;gap:10px;margin-top:14px;position:relative;z-index:1}
+.today-count{flex:1;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.15);border-radius:12px;padding:10px;text-align:center}
+.today-count .n{font-size:22px;font-weight:800;color:#fff}
+.today-count .l{font-size:10px;color:rgba(255,255,255,0.6);font-weight:600;margin-top:2px}
+</style>
+
+</head>
+<body>
+<div id="app">
+
+  <!-- HEADER — stats bar removed -->
+
+  <div class="header">
+    <div class="header-row">
+      <div>
+        <div class="sub" id="greeting-text">Good morning,</div>
+        <h1>Srikanth 👋</h1>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" onclick="openModal('task')" title="Add Task">＋</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CATEGORY TABS -->
+
+  <div class="cat-scroll" id="cat-tabs"></div>
+
+  <!-- CONTENT PAGES -->
+
+  <div class="content">
+    <div id="page-dashboard" class="page active"></div>
+    <div id="page-today" class="page"></div>
+    <div id="page-work" class="page"></div>
+    <div id="page-personal" class="page"></div>
+    <div id="page-finance" class="page"></div>
+    <div id="page-health" class="page"></div>
+    <div id="page-other" class="page"></div>
+    <div id="page-stuck" class="page"></div>
+  </div>
+
+<button class="fab" onclick="openModal('task')">＋</button>
+
+  <!-- MODAL -->
+
+  <div class="overlay" id="overlay" onclick="handleOverlayClick(event)">
+    <div class="modal" style="position:relative">
+      <div class="modal-handle"></div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+      <h2 id="modal-title">New Item</h2>
+      <div class="modal-sub" id="modal-sub">Add a task to stay on track</div>
+
+```
+  <div class="modal-type-tabs" id="modal-type-tabs">
+    <button class="mtt on" onclick="switchModalType('task',this)">📋 Task</button>
+    <button class="mtt" onclick="switchModalType('investment',this)">💰 Investment</button>
+    <button class="mtt" onclick="switchModalType('loan',this)">🏦 Loan</button>
+  </div>
+
+  <!-- TASK FORM -->
+  <div id="task-form">
+    <div class="field">
+      <label>Task Title *</label>
+      <input id="f-title" type="text" placeholder="What needs to be done?"/>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Priority</label>
+        <select id="f-priority">
+          <option>High</option>
+          <option selected>Medium</option>
+          <option>Low</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Status</label>
+        <select id="f-status">
+          <option>To Do</option>
+          <option>In Progress</option>
+          <option>Done</option>
+        </select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Due Date</label>
+        <input id="f-date" type="date"/>
+      </div>
+      <div class="field">
+        <label>Category</label>
+        <select id="f-category">
+          <option>Work</option>
+          <option>Personal</option>
+          <option>Health</option>
+          <option>Other</option>
+        </select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes (optional)</label>
+      <textarea id="f-notes" placeholder="Any extra details..."></textarea>
+    </div>
+    <div class="recur-toggle">
+      <span style="font-size:16px">🔁</span>
+      <label for="f-recurring">Recurring Task</label>
+      <label class="toggle-sw">
+        <input type="checkbox" id="f-recurring" onchange="toggleRecurUI()"/>
+        <span class="toggle-sl"></span>
+      </label>
+    </div>
+    <div id="recur-freq-ui" style="display:none;margin-top:8px">
+      <div style="font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">Repeat Frequency</div>
+      <div class="recur-freq-row">
+        <div class="recur-freq-opt selected" onclick="selectFreq(this,'daily')">📆 Daily</div>
+        <div class="recur-freq-opt" onclick="selectFreq(this,'weekly')">📅 Weekly</div>
+        <div class="recur-freq-opt" onclick="selectFreq(this,'monthly')">🗓 Monthly</div>
+        <div class="recur-freq-opt" onclick="selectFreq(this,'weekdays')">💼 Weekdays</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- INVESTMENT FORM -->
+  <div id="inv-form" style="display:none">
+    <div class="field">
+      <label>Investment Name *</label>
+      <input id="i-name" type="text" placeholder="e.g. Reliance Industries, SBI FD"/>
+    </div>
+    <div class="field">
+      <label>Investment Type</label>
+      <div class="type-grid" id="inv-type-grid">
+        <div class="type-opt selected" onclick="selectInvType(this,'Stocks')">📈 Stocks</div>
+        <div class="type-opt" onclick="selectInvType(this,'Mutual Fund')">🏦 Mutual Fund</div>
+        <div class="type-opt" onclick="selectInvType(this,'FD')">🏛 FD</div>
+        <div class="type-opt" onclick="selectInvType(this,'Gold/SGB')">🥇 Gold/SGB</div>
+        <div class="type-opt" onclick="selectInvType(this,'Crypto')">₿ Crypto</div>
+        <div class="type-opt" onclick="selectInvType(this,'Other')">💼 Other</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Amount Invested (₹)</label>
+        <input id="i-amount" type="number" placeholder="50000"/>
+      </div>
+      <div class="field">
+        <label>Expected Return (%)</label>
+        <input id="i-roi" type="number" placeholder="12" step="0.1"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Start Date</label>
+        <input id="i-start" type="date"/>
+      </div>
+      <div class="field">
+        <label>Exit / Maturity Date</label>
+        <input id="i-exit" type="date"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Notes / Broker / Platform</label>
+      <textarea id="i-notes" placeholder="e.g. Zerodha, HDFC Bank, SIP monthly..."></textarea>
+    </div>
+  </div>
+
+  <!-- LOAN FORM -->
+  <div id="loan-form" style="display:none">
+    <div class="field">
+      <label>Loan Name *</label>
+      <input id="l-name" type="text" placeholder="e.g. Home Loan - HDFC, Car Loan - SBI"/>
+    </div>
+    <div class="field">
+      <label>Loan Type</label>
+      <div class="type-grid" id="loan-type-grid">
+        <div class="type-opt selected" onclick="selectLoanType(this,'Home Loan')">🏠 Home</div>
+        <div class="type-opt" onclick="selectLoanType(this,'Car Loan')">🚗 Car</div>
+        <div class="type-opt" onclick="selectLoanType(this,'Personal Loan')">👤 Personal</div>
+        <div class="type-opt" onclick="selectLoanType(this,'Education Loan')">🎓 Education</div>
+        <div class="type-opt" onclick="selectLoanType(this,'Business Loan')">💼 Business</div>
+        <div class="type-opt" onclick="selectLoanType(this,'Other Loan')">📋 Other</div>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Principal Amount (₹)</label>
+        <input id="l-principal" type="number" placeholder="1000000"/>
+      </div>
+      <div class="field">
+        <label>Interest Rate (% p.a.)</label>
+        <input id="l-rate" type="number" placeholder="8.5" step="0.1"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>EMI Amount (₹)</label>
+        <input id="l-emi" type="number" placeholder="15000"/>
+      </div>
+      <div class="field">
+        <label>Tenure (months)</label>
+        <input id="l-tenure" type="number" placeholder="240"/>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Start Date</label>
+        <input id="l-start" type="date"/>
+      </div>
+      <div class="field">
+        <label>End Date</label>
+        <input id="l-end" type="date"/>
+      </div>
+    </div>
+    <div class="field">
+      <label>Lender / Bank / Notes</label>
+      <textarea id="l-notes" placeholder="e.g. HDFC Bank, Account No. XXXXXX..."></textarea>
+    </div>
+  </div>
+
+  <button class="save-btn" id="save-btn" onclick="saveItem()">Save ✓</button>
+</div>
+```
+
+  </div>
+</div>
+
+<script>
+// ── STATE ─────────────────────────────────────────────────────────────
+const TODAY = new Date().toISOString().split("T")[0];
+const hr = new Date().getHours();
+document.getElementById("greeting-text").textContent =
+  hr<12?"Good morning,":hr<17?"Good afternoon,":"Good evening,";
+
+let tasks = JSON.parse(localStorage.getItem("tm_tasks")||"null") || [
+  {id:1,title:"Prepare Q1 presentation",priority:"High",status:"In Progress",dueDate:"2026-03-08",category:"Work",notes:"Include revenue charts",recurring:false,frequency:""},
+  {id:2,title:"Client call follow-up",priority:"High",status:"To Do",dueDate:"2026-03-08",category:"Work",notes:"",recurring:false,frequency:""},
+  {id:3,title:"Submit tax documents",priority:"High",status:"To Do",dueDate:"2026-03-10",category:"Work",notes:"",recurring:false,frequency:""},
+  {id:4,title:"Morning walk routine",priority:"Medium",status:"In Progress",dueDate:"2026-03-08",category:"Health",notes:"Target 5km daily",recurring:true,frequency:"daily"},
+  {id:5,title:"Read Atomic Habits",priority:"Low",status:"To Do",dueDate:"2026-03-20",category:"Personal",notes:"",recurring:false,frequency:""},
+  {id:6,title:"Review insurance policy",priority:"Medium",status:"To Do",dueDate:"2026-03-08",category:"Personal",notes:"",recurring:false,frequency:""},
+  {id:7,title:"Team standup",priority:"Medium",status:"To Do",dueDate:"2026-03-08",category:"Work",notes:"",recurring:true,frequency:"weekdays"},
+];
+
+let investments = JSON.parse(localStorage.getItem("tm_investments")||"null") || [
+  {id:101,name:"Reliance Industries",type:"Stocks",amount:50000,roi:15,startDate:"2025-01-10",exitDate:"2027-01-10",notes:"Long term hold via Zerodha"},
+  {id:102,name:"SBI Bluechip Fund",type:"Mutual Fund",amount:120000,roi:12,startDate:"2024-06-01",exitDate:"2029-06-01",notes:"Monthly SIP ₹5000"},
+  {id:103,name:"HDFC FD",type:"FD",amount:200000,roi:7.5,startDate:"2025-03-01",exitDate:"2026-03-01",notes:"Auto-renewal"},
+  {id:104,name:"Sovereign Gold Bond",type:"Gold/SGB",amount:75000,roi:8,startDate:"2023-11-15",exitDate:"2031-11-15",notes:"RBI SGB Series"},
+];
+
+let loans = JSON.parse(localStorage.getItem("tm_loans")||"null") || [
+  {id:201,name:"Home Loan - HDFC",type:"Home Loan",principal:3000000,rate:8.5,emi:26500,tenure:240,startDate:"2022-01-01",endDate:"2041-12-31",notes:"HDFC Bank, Account ending 4521"},
+  {id:202,name:"Car Loan - SBI",type:"Car Loan",principal:600000,rate:9.2,emi:12500,tenure:60,startDate:"2024-06-01",endDate:"2029-05-31",notes:"SBI Auto Loan"},
+];
+
+let editId = null, editType = null;
+let currentInvType = "Stocks";
+let currentLoanType = "Home Loan";
+let currentRecurFreq = "daily";
+let currentTab = "dashboard";
+let filterStatus = "All", filterPri = "All", sortBy = "dueDate", searchQ = "";
+
+function saveData(){
+  localStorage.setItem("tm_tasks",JSON.stringify(tasks));
+  localStorage.setItem("tm_investments",JSON.stringify(investments));
+  localStorage.setItem("tm_loans",JSON.stringify(loans));
+}
+function isOverdue(t){ return t.dueDate && t.dueDate < TODAY && t.status!=="Done"; }
+function daysUntil(d){
+  if(!d) return null;
+  return Math.round((new Date(d)-new Date(TODAY))/(1000*60*60*24));
+}
+function countdownHTML(t){
+  if(t.status==="Done") return "";
+  const d = daysUntil(t.dueDate);
+  if(d===null) return "";
+  if(d<0) return `<span class="countdown cd-overdue">⚠ ${Math.abs(d)}d overdue</span>`;
+  if(d===0) return `<span class="countdown cd-today">Due today!</span>`;
+  if(d<=3) return `<span class="countdown cd-soon">${d}d left</span>`;
+  return `<span class="countdown cd-ok">${d}d left</span>`;
+}
+
+// Advance a recurring task's due date when marked done
+function getNextDueDate(task){
+  if(!task.dueDate) return TODAY;
+  const base = new Date(task.dueDate);
+  const freq = task.frequency||"daily";
+  if(freq==="daily"){ base.setDate(base.getDate()+1); }
+  else if(freq==="weekly"){ base.setDate(base.getDate()+7); }
+  else if(freq==="monthly"){ base.setMonth(base.getMonth()+1); }
+  else if(freq==="weekdays"){
+    base.setDate(base.getDate()+1);
+    while(base.getDay()===0||base.getDay()===6) base.setDate(base.getDate()+1);
+  }
+  return base.toISOString().split("T")[0];
+}
+
+// Net worth helpers
+function calcNetWorth(){
+  const totalInv = investments.reduce((s,i)=>s+Number(i.amount),0);
+  const totalLoan = loans.reduce((s,l)=>s+Number(l.principal),0);
+  return {netWorth: totalInv - totalLoan, totalInv, totalLoan};
+}
+
+// EMI calendar: next due date for each loan (1st of each month by default, or start day)
+function getEMIDueThisMonth(loan){
+  const now = new Date(TODAY);
+  const day = loan.startDate ? new Date(loan.startDate).getDate() : 1;
+  const dueDate = new Date(now.getFullYear(), now.getMonth(), day);
+  return dueDate.toISOString().split("T")[0];
+}
+
+// ── CATEGORIES ────────────────────────────────────────────────────────
+const CATS = [
+  {id:"dashboard",label:"📊 Dashboard"},
+  {id:"today",label:"📅 Today"},
+  {id:"work",label:"💼 Work"},
+  {id:"personal",label:"🏠 Personal"},
+  {id:"finance",label:"💰 Finance"},
+  {id:"health",label:"❤️ Health"},
+  {id:"other",label:"📦 Other"},
+  {id:"stuck",label:"⚠️ Stuck"},
+];
+
+function renderCatTabs(){
+  const todayCount = tasks.filter(t=>t.dueDate===TODAY&&t.status!=="Done").length;
+  document.getElementById("cat-tabs").innerHTML = CATS.map(c=>{
+    const badge = c.id==="today"&&todayCount>0
+      ? `<span style="background:var(--red);color:#fff;font-size:10px;font-weight:700;padding:1px 6px;border-radius:99px;margin-left:4px">${todayCount}</span>`
+      : "";
+    return `<button class="cat-tab ${currentTab===c.id?"active":""}" onclick="switchTab('${c.id}')">${c.label}${badge}</button>`;
+  }).join("");
+}
+
+function switchTab(id){
+  currentTab = id;
+  document.querySelectorAll(".page").forEach(p=>p.classList.remove("active"));
+  document.getElementById("page-"+id).classList.add("active");
+  renderCatTabs();
+  render();
+}
+
+// ── TASK CARD HTML ─────────────────────────────────────────────────────
+const STATUSES=["To Do","In Progress","Done"];
+const CHK={"To Do":"chk-todo ○","In Progress":"chk-prog ◑","Done":"chk-done ✓"};
+
+function taskCardHTML(t){
+  const ov=isOverdue(t);
+  const chk=CHK[t.status].split(" ");
+  const freqLabels={daily:"Daily",weekly:"Weekly",monthly:"Monthly",weekdays:"Weekdays"};
+  const recurBadge = t.recurring ? `<span class="recur-badge">🔁 ${freqLabels[t.frequency]||"Recurring"}</span>` : "";
+  return `<div class="task-card ${ov?"overdue":""} ${t.status==="Done"?"done-card":""}">
+    <div class="tc-row">
+      <button class="tc-check ${chk[0]}" onclick="cycleStatus(${t.id})">${chk[1]}</button>
+      <div class="tc-body">
+        <div class="tc-title ${t.status==="Done"?"done":""}">${t.title}</div>
+        <div class="tc-meta">
+          <span class="pill pill-${t.priority.toLowerCase()}">${t.priority}</span>
+          <span class="pill pill-${t.status==="To Do"?"todo":t.status==="In Progress"?"prog":"done"}">${t.status}</span>
+          <span class="pill pill-cat">${t.category}</span>
+          ${recurBadge}
+          ${t.dueDate?`<span class="date-lbl ${ov?"urgent":daysUntil(t.dueDate)<=3?"soon":""}">📅 ${t.dueDate}</span>`:""}
+          ${countdownHTML(t)}
+        </div>
+        ${t.notes?`<div style="font-size:12px;color:var(--text3);margin-top:5px;font-style:italic">${t.notes}</div>`:""}
+      </div>
+      <div class="tc-actions">
+        <button onclick="openEditTask(${t.id})">✏️</button>
+        <button onclick="deleteTask(${t.id})">🗑️</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+// ── TODAY PAGE ─────────────────────────────────────────────────────────
+function renderTodayPage(){
+  const todayTasks = [...tasks].filter(t=>t.dueDate===TODAY).sort((a,b)=>{
+    const po=["High","Medium","Low"];
+    return po.indexOf(a.priority)-po.indexOf(b.priority);
+  });
+  const pending = todayTasks.filter(t=>t.status!=="Done");
+  const done = todayTasks.filter(t=>t.status==="Done");
+  const dateStr = new Date().toLocaleDateString("en-IN",{weekday:"long",day:"numeric",month:"long"});
+
+  const html = `
+    <div class="pad">
+      <div class="today-page-header">
+        <div class="today-page-date">${dateStr}</div>
+        <div class="today-page-title">Today's Tasks</div>
+        <div class="today-page-sub">${pending.length===0?"All done for today! 🎉":`${pending.length} task${pending.length>1?"s":""} remaining`}</div>
+        <div class="today-count-row">
+          <div class="today-count">
+            <div class="n">${todayTasks.length}</div>
+            <div class="l">Total Today</div>
+          </div>
+          <div class="today-count">
+            <div class="n" style="color:#fca5a5">${pending.length}</div>
+            <div class="l">Remaining</div>
+          </div>
+          <div class="today-count">
+            <div class="n" style="color:#86efac">${done.length}</div>
+            <div class="l">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      ${pending.length===0&&done.length===0?`
+        <div class="empty-state">
+          <div class="emoji">🎯</div>
+          <div class="etitle">Nothing due today!</div>
+          <div class="esub">Enjoy your free day or add a task with today's date.</div>
+        </div>
+        <button onclick="openModal('task')" style="display:block;margin:0 auto;padding:13px 28px;background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer">
+          ＋ Add Task for Today
+        </button>
+      `:""}
+
+      ${pending.length>0?`
+        <div style="font-size:12px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px">
+          Pending (${pending.length})
+        </div>
+        ${pending.map(t=>taskCardHTML(t)).join("")}
+      `:""}
+
+      ${done.length>0?`
+        <div style="font-size:12px;font-weight:700;color:var(--green);text-transform:uppercase;letter-spacing:.06em;margin:14px 0 10px">
+          ✓ Completed Today (${done.length})
+        </div>
+        ${done.map(t=>taskCardHTML(t)).join("")}
+      `:""}
+
+      <button onclick="openModal('task')" style="width:100%;padding:13px;background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;margin-top:8px">
+        ＋ Add Task for Today
+      </button>
+    </div>
+  `;
+  document.getElementById("page-today").innerHTML = html;
+}
+
+// ── DASHBOARD ──────────────────────────────────────────────────────────
+function renderDashboard(){
+  const total=tasks.length, done=tasks.filter(t=>t.status==="Done").length;
+  const overdue=tasks.filter(t=>isOverdue(t)).length;
+  const highPending=tasks.filter(t=>t.priority==="High"&&t.status!=="Done").length;
+  const todayTasks=tasks.filter(t=>t.dueDate===TODAY&&t.status!=="Done");
+
+  // Priority-ordered upcoming (soonest due first, not done)
+  const upcoming = [...tasks]
+    .filter(t=>t.status!=="Done")
+    .sort((a,b)=>{
+      if(!a.dueDate&&!b.dueDate) return 0;
+      if(!a.dueDate) return 1;
+      if(!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
+    }).slice(0,5);
+
+  let html = `
+    <div class="pad" style="padding-bottom:0">
+
+      <!-- TODAY'S TASKS HIGHLIGHT (new prominent section) -->
+      <div class="today-section">
+        <div class="today-header">
+          <div class="today-title">📅 Today's Tasks
+            <span class="today-badge ${todayTasks.length===0?"done":""}">${todayTasks.length===0?"All Done ✓":todayTasks.length+" pending"}</span>
+          </div>
+          <button onclick="switchTab('today')" style="background:rgba(255,255,255,0.15);border:1px solid rgba(255,255,255,0.2);color:#fff;font-size:11px;font-weight:700;padding:5px 12px;border-radius:99px;cursor:pointer">View all ›</button>
+        </div>
+        ${todayTasks.length===0?`
+          <div class="today-empty">
+            <div class="e-ico">🎉</div>
+            <div class="e-txt">No pending tasks for today!</div>
+          </div>
+        `:todayTasks.slice(0,3).map(t=>`
+          <div class="today-task ${t.status==="Done"?"done-today":""}">
+            <div class="today-task-row">
+              <button class="today-chk ${t.status==="Done"?"done-chk":""}" onclick="cycleStatus(${t.id})">${t.status==="Done"?"✓":"○"}</button>
+              <div style="flex:1">
+                <div class="today-task-title ${t.status==="Done"?"done-text":""}">${t.title}</div>
+                <div class="today-meta">
+                  <span class="today-pill ${t.priority==="High"?"tp-high":t.priority==="Medium"?"tp-medium":"tp-low"}">${t.priority}</span>
+                  <span class="today-pill tp-cat">${t.category}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        `).join("")}
+        ${todayTasks.length>3?`<div style="text-align:center;margin-top:8px;position:relative;z-index:1"><button onclick="switchTab('today')" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.2);color:rgba(255,255,255,0.7);font-size:12px;font-weight:600;padding:7px 18px;border-radius:99px;cursor:pointer">+${todayTasks.length-3} more tasks</button></div>`:""}
+      </div>
+
+      <!-- Alerts -->
+      ${highPending>0?`
+      <div class="alert alert-red" onclick="switchTabFiltered('All','High')">
+        <div class="ico">🔥</div>
+        <div><div class="atitle">${highPending} High Priority Tasks Pending</div><div class="asub">Tap to view and tackle them now</div></div>
+      </div>`:""}
+      ${overdue>0?`
+      <div class="alert alert-amber" onclick="switchTab('stuck')">
+        <div class="ico">⚠️</div>
+        <div><div class="atitle">${overdue} Task${overdue>1?"s":""} Overdue!</div><div class="asub">Tap to see what needs attention</div></div>
+      </div>`:""}
+
+    </div>
+
+    <!-- Upcoming by Due Date -->
+    <div class="sec-div">Upcoming Tasks</div>
+    <div style="padding:0 16px">
+      ${upcoming.length===0
+        ? `<div class="no-items">All tasks completed! 🎉</div>`
+        : upcoming.map(t=>taskCardHTML(t)).join("")}
+    </div>
+
+    <!-- Finance Snapshot -->
+    <div class="sec-div" style="cursor:pointer" onclick="switchTab('finance')">Finance Snapshot ›</div>
+    <div style="padding:0 16px 16px">
+      ${renderFinanceSummaryMini()}
+    </div>
+  `;
+  document.getElementById("page-dashboard").innerHTML = html;
+}
+
+function renderFinanceSummaryMini(){
+  const totalInv=investments.reduce((s,i)=>s+Number(i.amount),0);
+  const totalLoan=loans.reduce((s,l)=>s+Number(l.principal),0);
+
+  if(investments.length===0&&loans.length===0) return `<div class="no-items">No finance data yet. <span style="color:var(--indigo);cursor:pointer" onclick="openModal('investment')">Add one ›</span></div>`;
+
+  return `
+    ${investments.length>0?`
+    <div class="fin-summary" onclick="switchTab('finance')" style="cursor:pointer">
+      <h3>Total Invested</h3>
+      <div class="total">₹${formatNum(totalInv)}</div>
+      <div class="sub">${investments.length} investment${investments.length>1?"s":""}</div>
+    </div>`:""}
+    ${loans.length>0?`
+    <div class="loan-summary" onclick="switchTab('finance')" style="cursor:pointer">
+      <h3>Total Outstanding Loans</h3>
+      <div class="total">₹${formatNum(totalLoan)}</div>
+      <div class="sub">${loans.length} active loan${loans.length>1?"s":""}</div>
+    </div>`:""}
+  `;
+}
+
+function formatNum(n){
+  if(n>=10000000) return (n/10000000).toFixed(1)+"Cr";
+  if(n>=100000) return (n/100000).toFixed(1)+"L";
+  if(n>=1000) return (n/1000).toFixed(1)+"K";
+  return n.toString();
+}
+
+// ── TASK LIST PAGE ─────────────────────────────────────────────────────
+function renderTaskPage(cat){
+  let list = [...tasks];
+  if(cat!=="all") list=list.filter(t=>t.category.toLowerCase()===cat);
+  if(filterStatus!=="All") list=list.filter(t=>t.status===filterStatus);
+  if(filterPri!=="All") list=list.filter(t=>t.priority===filterPri);
+  if(searchQ) list=list.filter(t=>t.title.toLowerCase().includes(searchQ.toLowerCase()));
+  list.sort((a,b)=>{
+    if(sortBy==="dueDate"){
+      if(!a.dueDate&&!b.dueDate) return 0;
+      if(!a.dueDate) return 1; if(!b.dueDate) return -1;
+      return a.dueDate.localeCompare(b.dueDate);
+    }
+    if(sortBy==="priority") return ["High","Medium","Low"].indexOf(a.priority)-["High","Medium","Low"].indexOf(b.priority);
+    return a.title.localeCompare(b.title);
+  });
+
+  const pageId = cat==="all"?"work":cat;
+  const html = `
+    <div class="search-wrap">
+      <div class="search-box">
+        <span class="search-ico">🔍</span>
+        <input type="text" placeholder="Search tasks..." value="${searchQ}" oninput="setSearch(this.value,'${pageId}')"/>
+      </div>
+    </div>
+    <div class="filter-bar">
+      ${["All","To Do","In Progress","Done"].map(s=>
+        `<button class="fb ${filterStatus===s?"fb-on-s":"fb-off"}" onclick="setFS('${s}','${pageId}')">${s}</button>`
+      ).join("")}
+    </div>
+    <div class="filter-bar" style="padding-top:0">
+      ${["All","High","Medium","Low"].map(p=>
+        `<button class="fb ${filterPri===p?"fb-on-p":"fb-off"}" onclick="setFP('${p}','${pageId}')">${p}</button>`
+      ).join("")}
+      <select class="sort-sel" onchange="setSort(this.value,'${pageId}')">
+        <option value="dueDate" ${sortBy==="dueDate"?"selected":""}>📅 By Date</option>
+        <option value="priority" ${sortBy==="priority"?"selected":""}>🔥 By Priority</option>
+        <option value="title" ${sortBy==="title"?"selected":""}>🔤 By Name</option>
+      </select>
+    </div>
+    <div style="padding:8px 16px 0">
+      <button onclick="openModal('task')" style="width:100%;padding:12px;background:linear-gradient(135deg,var(--indigo),var(--purple));color:#fff;font-size:13px;font-weight:700;border:none;border-radius:14px;cursor:pointer;margin-bottom:4px">
+        ＋ Add New Task
+      </button>
+    </div>
+    <div style="padding:8px 16px 0">
+      ${list.length===0
+        ? `<div class="empty-state"><div class="emoji">✅</div><div class="etitle">No tasks here!</div><div class="esub">Add a task or adjust your filters</div></div>`
+        : list.map(t=>taskCardHTML(t)).join("")}
+    </div>
+  `;
+  document.getElementById("page-"+pageId).innerHTML = html;
+}
+
+function setFS(v,page){filterStatus=v; renderTaskPage(page);}
+function setFP(v,page){filterPri=v; renderTaskPage(page);}
+function setSort(v,page){sortBy=v; renderTaskPage(page);}
+function setSearch(v,page){searchQ=v; renderTaskPage(page);}
+
+function switchTabFiltered(status, pri){
+  filterStatus=status; filterPri=pri;
+  switchTab("work");
+}
+
+// ── FINANCE PAGE ───────────────────────────────────────────────────────
+function renderEMICalendar(){
+  if(loans.length===0) return "";
+  const monthName = new Date().toLocaleDateString("en-IN",{month:"long",year:"numeric"});
+  const totalEMI = loans.reduce((s,l)=>s+Number(l.emi),0);
+
+  const rows = loans.map(loan=>{
+    const dueDate = getEMIDueThisMonth(loan);
+    const d = daysUntil(dueDate);
+    let cls="due-ok", badgeCls="emi-due-ok-badge", badgeText="On track";
+    if(d===0){ cls="due-today"; badgeCls="emi-due-today-badge"; badgeText="Due today!"; }
+    else if(d<0){ cls="due-soon"; badgeCls="emi-due-soon-badge"; badgeText="Overdue"; }
+    else if(d<=5){ cls="due-soon"; badgeCls="emi-due-soon-badge"; badgeText=`Due in ${d}d`; }
+    const icons={"Home Loan":"🏠","Car Loan":"🚗","Personal Loan":"👤","Education Loan":"🎓","Business Loan":"💼","Other Loan":"📋"};
+    return `<div class="emi-row">
+      <div class="emi-icon ${cls}">${icons[loan.type]||"📋"}</div>
+      <div class="emi-info">
+        <div class="emi-name">${loan.name}</div>
+        <div class="emi-due-date">Due: ${dueDate}</div>
+      </div>
+      <div>
+        <div class="emi-amount">₹${formatNum(Number(loan.emi))}</div>
+        <span class="emi-status-badge ${badgeCls}">${badgeText}</span>
+      </div>
+    </div>`;
+  }).join("");
+
+  return `
+    <div class="sec-div">📆 EMI Calendar — ${monthName}</div>
+    <div class="emi-calendar-card">
+      <div class="emi-month-header">
+        <div class="emi-month-title">This Month's EMIs</div>
+        <div class="emi-month-total">₹${formatNum(totalEMI)}/mo</div>
+      </div>
+      ${rows}
+    </div>`;
+}
+
+function renderFinancePage(){
+  const {netWorth, totalInv, totalLoan} = calcNetWorth();
+  const isPositive = netWorth >= 0;
+
+  const html = `
+    <div class="pad" style="padding-bottom:0">
+
+      <!-- NET WORTH CARD -->
+      <div class="networth-card ${isPositive?"positive":"negative"}">
+        <div class="networth-label">💎 Net Worth</div>
+        <div class="networth-value">${netWorth<0?"-":""}₹${formatNum(Math.abs(netWorth))}</div>
+        <div class="networth-sub">${isPositive?"Your assets exceed your liabilities — great work!":"Your liabilities exceed your assets — focus on repayment"}</div>
+        <div class="networth-breakdown">
+          <div class="nw-item">
+            <div class="nw-n">₹${formatNum(totalInv)}</div>
+            <div class="nw-l">📈 Investments</div>
+          </div>
+          <div class="nw-item">
+            <div class="nw-n">₹${formatNum(totalLoan)}</div>
+            <div class="nw-l">🏦 Loan Burden</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- INVESTMENTS SUMMARY -->
+      ${investments.length>0?`
+      <div class="fin-summary">
+        <h3>Total Portfolio</h3>
+        <div class="total">₹${formatNum(totalInv)}</div>
+        <div class="sub">${investments.length} active investment${investments.length>1?"s":""}</div>
+        <div class="fin-grid">
+          ${["Stocks","Mutual Fund","FD","Gold/SGB"].map(type=>{
+            const items=investments.filter(i=>i.type===type);
+            if(!items.length) return "";
+            const amt=items.reduce((s,i)=>s+Number(i.amount),0);
+            const icons={Stocks:"📈","Mutual Fund":"🏦",FD:"🏛","Gold/SGB":"🥇"};
+            return `<div class="fin-stat"><div class="fn">₹${formatNum(amt)}</div><div class="fl">${icons[type]} ${type} (${items.length})</div></div>`;
+          }).join("")}
+        </div>
+      </div>`:""}
+
+      <!-- LOANS SUMMARY -->
+      ${loans.length>0?`
+      <div class="loan-summary">
+        <h3>Total Loan Burden</h3>
+        <div class="total">₹${formatNum(totalLoan)}</div>
+        <div class="sub">Monthly EMI: ₹${formatNum(loans.reduce((s,l)=>s+Number(l.emi),0))} · ${loans.length} active loan${loans.length>1?"s":""}</div>
+        <div class="loan-grid">
+          ${["Home Loan","Car Loan","Personal Loan","Education Loan","Business Loan","Other Loan"].map(type=>{
+            const items=loans.filter(l=>l.type===type);
+            if(!items.length) return "";
+            const total2=items.reduce((s,l)=>s+Number(l.principal),0);
+            const icons={"Home Loan":"🏠","Car Loan":"🚗","Personal Loan":"👤","Education Loan":"🎓","Business Loan":"💼","Other Loan":"📋"};
+            return `<div class="loan-stat"><div class="fn">₹${formatNum(total2)}</div><div class="fl">${icons[type]||"📋"} ${type} (${items.length})</div></div>`;
+          }).join("")}
+        </div>
+      </div>`:""}
+
+      <!-- ADD BUTTONS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+        <button onclick="openModal('investment')" style="padding:13px;background:linear-gradient(135deg,#065f46,#047857);color:#fff;font-size:12px;font-weight:700;border:none;border-radius:14px;cursor:pointer">
+          ＋ Add Investment
+        </button>
+        <button onclick="openModal('loan')" style="padding:13px;background:linear-gradient(135deg,#7f1d1d,#991b1b);color:#fff;font-size:12px;font-weight:700;border:none;border-radius:14px;cursor:pointer">
+          ＋ Add Loan
+        </button>
+      </div>
+
+      ${investments.length===0&&loans.length===0?`
+      <div class="empty-state">
+        <div class="emoji">💰</div>
+        <div class="etitle">No finance data yet</div>
+        <div class="esub">Track your investments and loans here</div>
+      </div>`:""}
+
+      <!-- EMI CALENDAR -->
+      ${renderEMICalendar()}
+
+      <!-- INVESTMENTS LIST -->
+      ${["Stocks","Mutual Fund","FD","Gold/SGB","Crypto","Other"].map(type=>{
+        const items=investments.filter(i=>i.type===type);
+        if(!items.length) return "";
+        const icons={Stocks:"📈","Mutual Fund":"🏦",FD:"🏛","Gold/SGB":"🥇",Crypto:"₿",Other:"💼"};
+        const typeClasses={Stocks:"inv-stocks","Mutual Fund":"inv-mf",FD:"inv-fd","Gold/SGB":"inv-gold",Crypto:"inv-other",Other:"inv-other"};
+        return `
+          <div class="sec-div">${icons[type]||"💼"} ${type}</div>
+          ${items.map(inv=>{
+            const yrs=inv.exitDate&&inv.startDate?(new Date(inv.exitDate)-new Date(inv.startDate))/(1000*60*60*24*365):1;
+            const expectedReturn=Math.round(Number(inv.amount)*Number(inv.roi)/100*yrs);
+            const totalVal=Number(inv.amount)+expectedReturn;
+            const elapsed=inv.startDate?(new Date(TODAY)-new Date(inv.startDate))/(1000*60*60*24*365):0;
+            const totalDur=inv.startDate&&inv.exitDate?(new Date(inv.exitDate)-new Date(inv.startDate))/(1000*60*60*24*365):1;
+            const progress=Math.min(100,Math.round(elapsed/totalDur*100));
+            const dExit=inv.exitDate?daysUntil(inv.exitDate):null;
+            return `
+              <div class="inv-card">
+                <span class="inv-type-badge ${typeClasses[type]||"inv-other"}">${icons[type]||"💼"} ${type}</span>
+                <div class="inv-name">${inv.name}</div>
+                <div class="inv-grid">
+                  <div class="inv-field"><div class="lbl">Invested</div><div class="val">₹${formatNum(Number(inv.amount))}</div></div>
+                  <div class="inv-field"><div class="lbl">Expected Return</div><div class="val green">+₹${formatNum(expectedReturn)}</div></div>
+                  <div class="inv-field"><div class="lbl">Rate of Interest</div><div class="val blue">${inv.roi}% p.a.</div></div>
+                  <div class="inv-field"><div class="lbl">Total at Maturity</div><div class="val green">₹${formatNum(totalVal)}</div></div>
+                  <div class="inv-field"><div class="lbl">Start Date</div><div class="val" style="font-size:12px">${inv.startDate||"—"}</div></div>
+                  <div class="inv-field"><div class="lbl">Exit / Maturity</div><div class="val" style="font-size:12px;${dExit!==null&&dExit<30?"color:#ef4444":"color:#16a34a"}">${inv.exitDate||"—"}</div></div>
+                </div>
+                <div class="inv-progress-wrap">
+                  <div class="inv-progress-lbl">
+                    <span>Investment Journey</span>
+                    <span>${progress}% elapsed${dExit!==null?` · ${dExit<0?Math.abs(dExit)+"d past exit":dExit+"d to exit"}`:""}
+                    </span>
+                  </div>
+                  <div class="pbar-track" style="height:8px"><div class="pbar-fill fill-green" style="width:${progress}%"></div></div>
+                </div>
+                ${inv.notes?`<div style="font-size:12px;color:var(--text3);margin-top:10px;font-style:italic">📝 ${inv.notes}</div>`:""}
+                <div class="inv-actions">
+                  <button class="inv-edit-btn" onclick="openEditInvestment(${inv.id})">✏️ Edit</button>
+                  <button class="inv-del-btn" onclick="deleteInvestment(${inv.id})">🗑️ Delete</button>
+                </div>
+              </div>`;
+          }).join("")}`;
+      }).join("")}
+
+      <!-- LOANS LIST -->
+      ${loans.length>0?`<div class="sec-div">🏦 Loans</div>`:""}
+      ${loans.map(loan=>{
+        const loanIcons={"Home Loan":"🏠","Car Loan":"🚗","Personal Loan":"👤","Education Loan":"🎓","Business Loan":"💼","Other Loan":"📋"};
+        const dEnd=loan.endDate?daysUntil(loan.endDate):null;
+        const elapsed=loan.startDate?(new Date(TODAY)-new Date(loan.startDate))/(1000*60*60*24*30):0;
+        const totalMonths=loan.tenure||1;
+        const paidMonths=Math.min(Math.round(elapsed),totalMonths);
+        const progress=Math.min(100,Math.round(paidMonths/totalMonths*100));
+        const totalInterest=loan.emi&&loan.tenure?Math.round(Number(loan.emi)*Number(loan.tenure)-Number(loan.principal)):0;
+        return `
+          <div class="inv-card" style="border-left:3px solid var(--loan)">
+            <span class="inv-type-badge inv-loan">${loanIcons[loan.type]||"📋"} ${loan.type}</span>
+            <div class="inv-name">${loan.name}</div>
+            <div class="inv-grid">
+              <div class="inv-field"><div class="lbl">Principal</div><div class="val red">₹${formatNum(Number(loan.principal))}</div></div>
+              <div class="inv-field"><div class="lbl">Monthly EMI</div><div class="val red">₹${formatNum(Number(loan.emi))}</div></div>
+              <div class="inv-field"><div class="lbl">Interest Rate</div><div class="val" style="color:#e11d48">${loan.rate}% p.a.</div></div>
+              <div class="inv-field"><div class="lbl">Total Interest</div><div class="val red">${totalInterest>0?"₹"+formatNum(totalInterest):"—"}</div></div>
+              <div class="inv-field"><div class="lbl">Start Date</div><div class="val" style="font-size:12px">${loan.startDate||"—"}</div></div>
+              <div class="inv-field"><div class="lbl">Closes On</div><div class="val" style="font-size:12px;${dEnd!==null&&dEnd<365?"color:#f59e0b":"color:var(--text)"}">${loan.endDate||"—"}</div></div>
+            </div>
+            <div class="inv-progress-wrap">
+              <div class="inv-progress-lbl">
+                <span>Repayment Progress</span>
+                <span>${paidMonths}/${totalMonths} months${dEnd!==null?` · ${dEnd<0?"Closed":dEnd+"d remaining"}`:""}
+                </span>
+              </div>
+              <div class="pbar-track" style="height:8px"><div class="pbar-fill fill-red" style="width:${progress}%"></div></div>
+            </div>
+            ${loan.notes?`<div style="font-size:12px;color:var(--text3);margin-top:10px;font-style:italic">📝 ${loan.notes}</div>`:""}
+            <div class="inv-actions">
+              <button class="inv-edit-btn" onclick="openEditLoan(${loan.id})">✏️ Edit</button>
+              <button class="inv-del-btn" onclick="deleteLoan(${loan.id})">🗑️ Delete</button>
+            </div>
+          </div>`;
+      }).join("")}
+
+    </div>
+  `;
+  document.getElementById("page-finance").innerHTML = html;
+}
+
+// ── STUCK PAGE ─────────────────────────────────────────────────────────
+function renderStuckPage(){
+  const inProg=[...tasks].filter(t=>t.status==="In Progress").sort((a,b)=>(a.dueDate||"").localeCompare(b.dueDate||""));
+  const overdueNotStarted=tasks.filter(t=>t.status==="To Do"&&isOverdue(t));
+  const html = `
+    <div class="pad">
+      <div class="alert alert-amber" style="cursor:default">
+        <div class="ico">🔍</div>
+        <div><div class="atitle">Where Did You Stop?</div><div class="asub">In Progress tasks sorted by urgency — tackle in this order!</div></div>
+      </div>
+      ${inProg.length===0?`
+        <div class="empty-state"><div class="emoji">🎯</div><div class="etitle">No blocked tasks!</div><div class="esub">Everything is done or not yet started.</div></div>
+      `:inProg.map((t,i)=>`
+        <div class="stuck-card ${i===0?"urgent":""}">
+          ${i===0?`<div class="stuck-urgent">🔴 #1 PRIORITY — Start here right now!</div>`:`<div style="font-size:11px;color:var(--text3);margin-bottom:6px">#${i+1} in queue</div>`}
+          <div class="stuck-title">${t.title}</div>
+          <div class="tc-meta" style="margin-bottom:0">
+            <span class="pill pill-${t.priority.toLowerCase()}">${t.priority}</span>
+            <span class="pill pill-cat">${t.category}</span>
+            ${t.dueDate?`<span class="date-lbl ${isOverdue(t)?"urgent":""}">📅 ${t.dueDate}</span>`:""}
+            ${countdownHTML(t)}
+          </div>
+          ${t.notes?`<div style="font-size:12px;color:var(--text3);margin-top:6px">📝 ${t.notes}</div>`:""}
+          <button class="green-btn" onclick="markDone(${t.id})">✓ Mark as Done</button>
+        </div>
+      `).join("")}
+      ${overdueNotStarted.length>0?`
+        <div class="sec-div" style="color:var(--red)">⏰ Overdue & Not Started</div>
+        ${overdueNotStarted.map(t=>taskCardHTML(t)).join("")}
+      `:""}
+    </div>
+  `;
+  document.getElementById("page-stuck").innerHTML = html;
+}
+
+// ── ACTIONS ────────────────────────────────────────────────────────────
+function cycleStatus(id){
+  const t = tasks.find(x=>x.id===id);
+  const nextIdx = (STATUSES.indexOf(t.status)+1)%3;
+  const nextStatus = STATUSES[nextIdx];
+  // If recurring task is being marked Done, reset it with next due date
+  if(t.recurring && nextStatus==="Done"){
+    tasks = tasks.map(x=>x.id!==id?x:{...x, status:"To Do", dueDate:getNextDueDate(x)});
+    saveData(); render();
+    // Show a quick confirmation
+    const btn = event.target;
+    const orig = btn.innerHTML;
+    btn.innerHTML = "✓";
+    btn.style.borderColor = "var(--green)";
+    setTimeout(()=>render(), 1200);
+    return;
+  }
+  tasks=tasks.map(x=>x.id!==id?x:{...x,status:nextStatus});
+  saveData(); render();
+}
+function markDone(id){
+  const t = tasks.find(x=>x.id===id);
+  if(t.recurring){
+    tasks = tasks.map(x=>x.id!==id?x:{...x, status:"To Do", dueDate:getNextDueDate(x)});
+  } else {
+    tasks=tasks.map(x=>x.id===id?{...x,status:"Done"}:x);
+  }
+  saveData(); render();
+}
+function deleteTask(id){
+  if(confirm("Delete this task?")){ tasks=tasks.filter(t=>t.id!==id); saveData(); render(); }
+}
+function deleteInvestment(id){
+  if(confirm("Delete this investment?")){ investments=investments.filter(i=>i.id!==id); saveData(); render(); }
+}
+function deleteLoan(id){
+  if(confirm("Delete this loan?")){ loans=loans.filter(l=>l.id!==id); saveData(); render(); }
+}
+
+// ── MODAL ──────────────────────────────────────────────────────────────
+let modalMode = "task";
+
+function openModal(type){
+  modalMode=type||"task";
+  editId=null; editType=null;
+  const titles={task:"New Task",investment:"New Investment",loan:"New Loan"};
+  const subs={task:"Add a task to stay on track",investment:"Track your investment portfolio",loan:"Track a loan or EMI"};
+  document.getElementById("modal-title").textContent=titles[type]||"New Task";
+  document.getElementById("modal-sub").textContent=subs[type]||"";
+  document.getElementById("modal-type-tabs").style.display="flex";
+  document.getElementById("save-btn").textContent="Save ✓";
+  document.getElementById("task-form").style.display="none";
+  document.getElementById("inv-form").style.display="none";
+  document.getElementById("loan-form").style.display="none";
+
+  if(type==="investment"){
+    document.getElementById("inv-form").style.display="block";
+    clearInvForm();
+  } else if(type==="loan"){
+    document.getElementById("loan-form").style.display="block";
+    clearLoanForm();
+  } else {
+    document.getElementById("task-form").style.display="block";
+    clearTaskForm();
+  }
+  document.querySelectorAll(".mtt").forEach(b=>{
+    const t=b.getAttribute("onclick").match(/'([^']+)'/)?.[1];
+    b.classList.toggle("on",t===type);
+  });
+  document.getElementById("overlay").classList.add("open");
+}
+
+function switchModalType(type,btn){
+  modalMode=type;
+  document.querySelectorAll(".mtt").forEach(b=>b.classList.remove("on"));
+  btn.classList.add("on");
+  document.getElementById("task-form").style.display=type==="task"?"block":"none";
+  document.getElementById("inv-form").style.display=type==="investment"?"block":"none";
+  document.getElementById("loan-form").style.display=type==="loan"?"block":"none";
+}
+
+function toggleRecurUI(){
+  const on = document.getElementById("f-recurring").checked;
+  document.getElementById("recur-freq-ui").style.display = on?"block":"none";
+}
+function selectFreq(el, freq){
+  currentRecurFreq = freq;
+  document.querySelectorAll(".recur-freq-opt").forEach(o=>o.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+function clearTaskForm(){
+  document.getElementById("f-title").value="";
+  document.getElementById("f-priority").value="Medium";
+  document.getElementById("f-status").value="To Do";
+  document.getElementById("f-date").value="";
+  document.getElementById("f-category").value="Work";
+  document.getElementById("f-notes").value="";
+  document.getElementById("f-recurring").checked=false;
+  document.getElementById("recur-freq-ui").style.display="none";
+  currentRecurFreq="daily";
+  document.querySelectorAll(".recur-freq-opt").forEach((o,i)=>o.classList.toggle("selected",i===0));
+}
+function clearInvForm(){
+  document.getElementById("i-name").value="";
+  document.getElementById("i-amount").value="";
+  document.getElementById("i-roi").value="";
+  document.getElementById("i-start").value="";
+  document.getElementById("i-exit").value="";
+  document.getElementById("i-notes").value="";
+  currentInvType="Stocks";
+  document.querySelectorAll("#inv-type-grid .type-opt").forEach((o,i)=>o.classList.toggle("selected",i===0));
+}
+function clearLoanForm(){
+  document.getElementById("l-name").value="";
+  document.getElementById("l-principal").value="";
+  document.getElementById("l-rate").value="";
+  document.getElementById("l-emi").value="";
+  document.getElementById("l-tenure").value="";
+  document.getElementById("l-start").value="";
+  document.getElementById("l-end").value="";
+  document.getElementById("l-notes").value="";
+  currentLoanType="Home Loan";
+  document.querySelectorAll("#loan-type-grid .type-opt").forEach((o,i)=>o.classList.toggle("selected",i===0));
+}
+
+function selectInvType(el,type){
+  currentInvType=type;
+  document.querySelectorAll("#inv-type-grid .type-opt").forEach(o=>o.classList.remove("selected"));
+  el.classList.add("selected");
+}
+function selectLoanType(el,type){
+  currentLoanType=type;
+  document.querySelectorAll("#loan-type-grid .type-opt").forEach(o=>o.classList.remove("selected"));
+  el.classList.add("selected");
+}
+
+function openEditTask(id){
+  const t=tasks.find(x=>x.id===id);
+  editId=id; editType="task"; modalMode="task";
+  document.getElementById("modal-title").textContent="Edit Task";
+  document.getElementById("modal-sub").textContent="Update your task details";
+  document.getElementById("modal-type-tabs").style.display="none";
+  document.getElementById("task-form").style.display="block";
+  document.getElementById("inv-form").style.display="none";
+  document.getElementById("loan-form").style.display="none";
+  document.getElementById("f-title").value=t.title;
+  document.getElementById("f-priority").value=t.priority;
+  document.getElementById("f-status").value=t.status;
+  document.getElementById("f-date").value=t.dueDate||"";
+  document.getElementById("f-category").value=t.category;
+  document.getElementById("f-notes").value=t.notes||"";
+  // Recurring
+  const isRecur = t.recurring||false;
+  document.getElementById("f-recurring").checked=isRecur;
+  document.getElementById("recur-freq-ui").style.display=isRecur?"block":"none";
+  currentRecurFreq=t.frequency||"daily";
+  document.querySelectorAll(".recur-freq-opt").forEach(o=>{
+    o.classList.toggle("selected",o.getAttribute("onclick").includes(`'${currentRecurFreq}'`));
+  });
+  document.getElementById("save-btn").textContent="Save Changes ✓";
+  document.getElementById("overlay").classList.add("open");
+}
+
+function openEditInvestment(id){
+  const inv=investments.find(x=>x.id===id);
+  editId=id; editType="investment"; modalMode="investment";
+  document.getElementById("modal-title").textContent="Edit Investment";
+  document.getElementById("modal-sub").textContent="Update investment details";
+  document.getElementById("modal-type-tabs").style.display="none";
+  document.getElementById("task-form").style.display="none";
+  document.getElementById("inv-form").style.display="block";
+  document.getElementById("loan-form").style.display="none";
+  document.getElementById("i-name").value=inv.name;
+  document.getElementById("i-amount").value=inv.amount;
+  document.getElementById("i-roi").value=inv.roi;
+  document.getElementById("i-start").value=inv.startDate||"";
+  document.getElementById("i-exit").value=inv.exitDate||"";
+  document.getElementById("i-notes").value=inv.notes||"";
+  currentInvType=inv.type;
+  document.querySelectorAll("#inv-type-grid .type-opt").forEach(o=>{
+    o.classList.toggle("selected",o.getAttribute("onclick").includes(`'${inv.type}'`));
+  });
+  document.getElementById("save-btn").textContent="Save Changes ✓";
+  document.getElementById("overlay").classList.add("open");
+}
+
+function openEditLoan(id){
+  const loan=loans.find(x=>x.id===id);
+  editId=id; editType="loan"; modalMode="loan";
+  document.getElementById("modal-title").textContent="Edit Loan";
+  document.getElementById("modal-sub").textContent="Update loan details";
+  document.getElementById("modal-type-tabs").style.display="none";
+  document.getElementById("task-form").style.display="none";
+  document.getElementById("inv-form").style.display="none";
+  document.getElementById("loan-form").style.display="block";
+  document.getElementById("l-name").value=loan.name;
+  document.getElementById("l-principal").value=loan.principal;
+  document.getElementById("l-rate").value=loan.rate;
+  document.getElementById("l-emi").value=loan.emi;
+  document.getElementById("l-tenure").value=loan.tenure;
+  document.getElementById("l-start").value=loan.startDate||"";
+  document.getElementById("l-end").value=loan.endDate||"";
+  document.getElementById("l-notes").value=loan.notes||"";
+  currentLoanType=loan.type;
+  document.querySelectorAll("#loan-type-grid .type-opt").forEach(o=>{
+    o.classList.toggle("selected",o.getAttribute("onclick").includes(`'${loan.type}'`));
+  });
+  document.getElementById("save-btn").textContent="Save Changes ✓";
+  document.getElementById("overlay").classList.add("open");
+}
+
+function closeModal(){ document.getElementById("overlay").classList.remove("open"); }
+function handleOverlayClick(e){ if(e.target===document.getElementById("overlay")) closeModal(); }
+
+function saveItem(){
+  if(modalMode==="loan"||editType==="loan"){
+    const name=document.getElementById("l-name").value.trim();
+    if(!name){ alert("Please enter a loan name!"); return; }
+    const loan={
+      id:editId||Date.now(),
+      name, type:currentLoanType,
+      principal:Number(document.getElementById("l-principal").value)||0,
+      rate:Number(document.getElementById("l-rate").value)||0,
+      emi:Number(document.getElementById("l-emi").value)||0,
+      tenure:Number(document.getElementById("l-tenure").value)||0,
+      startDate:document.getElementById("l-start").value,
+      endDate:document.getElementById("l-end").value,
+      notes:document.getElementById("l-notes").value,
+    };
+    if(editId&&editType==="loan") loans=loans.map(l=>l.id===editId?loan:l);
+    else loans=[...loans,loan];
+  } else if(modalMode==="investment"||editType==="investment"){
+    const name=document.getElementById("i-name").value.trim();
+    if(!name){ alert("Please enter an investment name!"); return; }
+    const inv={
+      id:editId||Date.now(),
+      name, type:currentInvType,
+      amount:Number(document.getElementById("i-amount").value)||0,
+      roi:Number(document.getElementById("i-roi").value)||0,
+      startDate:document.getElementById("i-start").value,
+      exitDate:document.getElementById("i-exit").value,
+      notes:document.getElementById("i-notes").value,
+    };
+    if(editId&&editType==="investment") investments=investments.map(i=>i.id===editId?inv:i);
+    else investments=[...investments,inv];
+  } else {
+    const title=document.getElementById("f-title").value.trim();
+    if(!title){ alert("Please enter a task title!"); return; }
+    const isRecur=document.getElementById("f-recurring").checked;
+    const task={
+      id:editId||Date.now(),
+      title,
+      priority:document.getElementById("f-priority").value,
+      status:document.getElementById("f-status").value,
+      dueDate:document.getElementById("f-date").value,
+      category:document.getElementById("f-category").value,
+      notes:document.getElementById("f-notes").value,
+      recurring:isRecur,
+      frequency:isRecur?currentRecurFreq:"",
+    };
+    if(editId&&editType==="task") tasks=tasks.map(t=>t.id===editId?task:t);
+    else tasks=[...tasks,task];
+  }
+  saveData(); closeModal(); render();
+}
+
+// ── RENDER ALL ─────────────────────────────────────────────────────────
+function render(){
+  renderCatTabs();
+  renderDashboard();
+  renderTodayPage();
+  renderTaskPage("work");
+  renderTaskPage("personal");
+  renderTaskPage("health");
+  renderTaskPage("other");
+  renderFinancePage();
+  renderStuckPage();
+}
+
+render();
+</script>
+
+</body>
+</html>
